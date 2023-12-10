@@ -123,7 +123,7 @@ s
         tools = values["tools"]
         allowed_tools = agent.get_allowed_tools()
         if allowed_tools is not None:
-            if set(allowed_tools) != set([tool.name for tool in tools]):
+            if set(allowed_tools) != {tool.name for tool in tools}:
                 raise ValueError(
                     f"Allowed tools ({allowed_tools}) different than "
                     f"provided tools ({[tool.name for tool in tools]})"
@@ -134,8 +134,8 @@ s
     def validate_return_direct_tool(cls, values: Dict) -> Dict:
         """Validate that tools are compatible with agent."""
         agent = values["agent"]
-        tools = values["tools"]
         if isinstance(agent, BaseMultiActionAgent):
+            tools = values["tools"]
             for tool in tools:
                 if tool.return_direct:
                     raise ValueError(
@@ -200,13 +200,10 @@ s
     def _should_continue(self, iterations: int, time_elapsed: float) -> bool:
         if self.max_iterations is not None and iterations >= self.max_iterations:
             return False
-        if (
-            self.max_execution_time is not None
-            and time_elapsed >= self.max_execution_time
-        ):
-            return False
-
-        return True
+        return (
+            self.max_execution_time is None
+            or time_elapsed < self.max_execution_time
+        )
 
     def _return(
         self,
@@ -293,10 +290,7 @@ s
         if isinstance(output, AgentFinish):
             return output
         actions: List[AgentAction]
-        if isinstance(output, AgentAction):
-            actions = [output]
-        else:
-            actions = output
+        actions = [output] if isinstance(output, AgentAction) else output
         result = []
         for agent_action in actions:
             if run_manager:
@@ -387,11 +381,7 @@ s
         if isinstance(output, AgentFinish):
             return output
         actions: List[AgentAction]
-        if isinstance(output, AgentAction):
-            actions = [output]
-        else:
-            actions = output
-
+        actions = [output] if isinstance(output, AgentAction) else output
         async def _aperform_agent_action(
             agent_action: AgentAction,
         ) -> Tuple[AgentAction, str]:
@@ -591,7 +581,6 @@ def initialize_agent_executor(
         human_message_template=agent_kwargs.get("human_message_template", None),
         input_variables=agent_kwargs.get("input_variables", None),
     )
-    agent_executor = AgentExecutor.from_agent_and_tools(
+    return AgentExecutor.from_agent_and_tools(
         agent=agent, tools=tools, verbose=verbose
     )
-    return agent_executor

@@ -176,26 +176,21 @@ class LLMCompiler(Chain, extra="allow"):
             ]
         )
         joinner_thought = f"Thought: {joinner_thought}"
-        context = "\n\n".join([previous_plan_and_observations, joinner_thought])
-        return context
+        return "\n\n".join([previous_plan_and_observations, joinner_thought])
 
     def _format_contexts(self, contexts: Sequence[str]) -> str:
         """contexts is a list of context
         each context is formatted as the description of _generate_context_for_replanner
         """
-        formatted_contexts = ""
-        for context in contexts:
-            formatted_contexts += f"Previous Plan:\n\n{context}\n\n"
-        formatted_contexts += "Current Plan:\n\n"
-        return formatted_contexts
+        return (
+            "".join(f"Previous Plan:\n\n{context}\n\n" for context in contexts)
+            + "Current Plan:\n\n"
+        )
 
     async def join(
         self, input_query: str, agent_scratchpad: str, is_final: bool
     ) -> str:
-        if is_final:
-            joinner_prompt = self.joinner_prompt_final
-        else:
-            joinner_prompt = self.joinner_prompt
+        joinner_prompt = self.joinner_prompt_final if is_final else self.joinner_prompt
         prompt = (
             f"{joinner_prompt}\n"  # Instructions and examples
             f"Question: {input_query}\n\n"  # User input query
