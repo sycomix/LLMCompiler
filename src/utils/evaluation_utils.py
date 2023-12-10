@@ -78,11 +78,7 @@ def compare_answer(answer: str, label: str):
         except:
             return False
         # allow 10% margin
-        if answer > label * 0.9 and answer < label * 1.1:
-            return True
-        else:
-            return False
-
+        return answer > label * 0.9 and answer < label * 1.1
     else:
         label = normalize_answer(label)
         answer = normalize_answer(answer)

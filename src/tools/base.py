@@ -167,23 +167,22 @@ class Tool(BaseTool):
         **kwargs: Any,
     ) -> Any:
         """Use the tool asynchronously."""
-        if self.coroutine:
-            new_argument_supported = signature(self.coroutine).parameters.get(
-                "callbacks"
-            )
-            return (
-                await self.coroutine(
-                    *args,
-                    callbacks=run_manager.get_child() if run_manager else None,
-                    **kwargs,
-                )
-                if new_argument_supported
-                else await self.coroutine(*args, **kwargs)
-            )
-        else:
+        if not self.coroutine:
             return await asyncio.get_running_loop().run_in_executor(
                 None, partial(self._run, run_manager=run_manager, **kwargs), *args
             )
+        new_argument_supported = signature(self.coroutine).parameters.get(
+            "callbacks"
+        )
+        return (
+            await self.coroutine(
+                *args,
+                callbacks=run_manager.get_child() if run_manager else None,
+                **kwargs,
+            )
+            if new_argument_supported
+            else await self.coroutine(*args, **kwargs)
+        )
 
     # TODO: this is for backwards compatibility, remove in future
     def __init__(
@@ -452,7 +451,7 @@ def tool(
         # if the argument is a function, then we use the function name as the tool name
         # Example usage: @tool
         return _make_with_name(args[0].__name__)(args[0])
-    elif len(args) == 0:
+    elif not args:
         # if there are no arguments, then we use the function name as the tool name
         # Example usage: @tool(return_direct=True)
         def _partial(func: Callable[[str], str]) -> BaseTool:

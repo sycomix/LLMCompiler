@@ -10,10 +10,7 @@ SCHEDULING_INTERVAL = 0.01  # seconds
 
 
 def _default_stringify_rule_for_arguments(args):
-    if len(args) == 1:
-        return str(args[0])
-    else:
-        return str(tuple(args))
+    return str(args[0]) if len(args) == 1 else str(tuple(args))
 
 
 def _replace_arg_mask_with_real_value(
@@ -27,7 +24,7 @@ def _replace_arg_mask_with_real_value(
     elif isinstance(args, str):
         for dependency in sorted(dependencies, reverse=True):
             # consider both ${1} and $1 (in case planner makes a mistake)
-            for arg_mask in ["${" + str(dependency) + "}", "$" + str(dependency)]:
+            for arg_mask in ["${" + str(dependency) + "}", f"${str(dependency)}"]:
                 if arg_mask in args:
                     if tasks[dependency].observation is not None:
                         args = args.replace(
@@ -150,10 +147,7 @@ class TaskFetchingUnit:
                     # Parse and set the new tasks
                     self.set_tasks({task.idx: task})
 
-            # Schedule and run executable tasks
-            executable_tasks = self._get_all_executable_tasks()
-
-            if executable_tasks:
+            if executable_tasks := self._get_all_executable_tasks():
                 for task_name in executable_tasks:
                     asyncio.create_task(self._run_task(self.tasks[task_name]))
                     self.remaining_tasks.remove(task_name)

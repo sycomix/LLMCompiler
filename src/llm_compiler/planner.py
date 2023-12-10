@@ -164,8 +164,7 @@ class LLMCompilerCallback(AsyncCallbackHandler):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
-        parsed_data = self._parser.ingest_token(token)
-        if parsed_data:
+        if parsed_data := self._parser.ingest_token(token):
             await self._queue.put(parsed_data)
             if parsed_data.is_join:
                 await self._queue.put(None)
@@ -178,8 +177,7 @@ class LLMCompilerCallback(AsyncCallbackHandler):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
-        parsed_data = self._parser.finalize()
-        if parsed_data:
+        if parsed_data := self._parser.finalize():
             await self._queue.put(parsed_data)
         await self._queue.put(None)
 

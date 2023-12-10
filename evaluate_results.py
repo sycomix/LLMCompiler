@@ -33,7 +33,7 @@ for i, (idx, x) in enumerate(results.items()):
 
 num_correct = sum(is_corrects)
 
-print(f"Results")
+print("Results")
 print(f"Raw: {num_correct} / {len(results)} = {num_correct / len(results)}")
 
 # compute mean and std of times

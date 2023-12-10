@@ -66,7 +66,7 @@ def _parse_llm_compiler_action_args(args: str) -> list[Any]:
     # This will convert the string into a python object
     # e.g. '"Ronaldo number of kids"' -> ("Ronaldo number of kids", )
     # '"I can answer the question now.", [3]' -> ("I can answer the question now.", [3])
-    if args == "":
+    if not args:
         return ()
     try:
         args = ast.literal_eval(args)
@@ -98,14 +98,11 @@ def _get_dependencies_from_graph(
     idx: int, tool_name: str, args: Sequence[Any]
 ) -> dict[str, list[str]]:
     """Get dependencies from a graph."""
-    if tool_name == "join":
-        # depends on the previous step
-        dependencies = list(range(1, idx))
-    else:
-        # define dependencies based on the dependency rule in tool_definitions.py
-        dependencies = [i for i in range(1, idx) if default_dependency_rule(i, args)]
-
-    return dependencies
+    return (
+        list(range(1, idx))
+        if tool_name == "join"
+        else [i for i in range(1, idx) if default_dependency_rule(i, args)]
+    )
 
 
 def instantiate_task(

@@ -61,27 +61,25 @@ class ReActWikipedia(Docstore):
         sentences = []
         for p in paragraphs:
             sentences += p.split(". ")
-        sentences = [s.strip() + "." for s in sentences if s.strip()]
+        sentences = [f"{s.strip()}." for s in sentences if s.strip()]
         return " ".join(sentences[:5])
 
     def _get_alternative(self, result: str) -> str:
         parsed_alternatives = result.split("Similar: ")[1][:-1]
 
         alternatives = ast.literal_eval(parsed_alternatives)
-        alternative = alternatives[0]
-        for alt in alternatives:
-            if "film" in alt or "movie" in alt:
-                alternative = alt
-                break
-        return alternative
+        return next(
+            (alt for alt in alternatives if "film" in alt or "movie" in alt),
+            alternatives[0],
+        )
 
     def post_process(
         self, response_text: str, entity: str, skip_retry_when_postprocess: bool = False
     ) -> str:
         soup = BeautifulSoup(response_text, features="html.parser")
-        result_divs = soup.find_all("div", {"class": "mw-search-result-heading"})
-
-        if result_divs:  # mismatch
+        if result_divs := soup.find_all(
+            "div", {"class": "mw-search-result-heading"}
+        ):
             self.result_titles = [
                 clean_str(div.get_text().strip()) for div in result_divs
             ]
@@ -92,9 +90,9 @@ class ReActWikipedia(Docstore):
             ]
             if any("may refer to:" in p for p in page):
                 if skip_retry_when_postprocess or self.skip_retry_when_postprocess:
-                    obs = "Could not find " + entity + "."
+                    obs = f"Could not find {entity}."
                 else:
-                    obs = self.search("[" + entity + "]", is_retry=True)
+                    obs = self.search(f"[{entity}]", is_retry=True)
             else:
                 self.page = ""
                 for p in page:
@@ -112,9 +110,9 @@ class ReActWikipedia(Docstore):
         self, response_text: str, entity: str, skip_retry_when_postprocess: bool = False
     ) -> str:
         soup = BeautifulSoup(response_text, features="html.parser")
-        result_divs = soup.find_all("div", {"class": "mw-search-result-heading"})
-
-        if result_divs:  # mismatch
+        if result_divs := soup.find_all(
+            "div", {"class": "mw-search-result-heading"}
+        ):
             self.result_titles = [
                 clean_str(div.get_text().strip()) for div in result_divs
             ]
@@ -125,9 +123,9 @@ class ReActWikipedia(Docstore):
             ]
             if any("may refer to:" in p for p in page):
                 if skip_retry_when_postprocess or self.skip_retry_when_postprocess:
-                    obs = "Could not find " + entity + "."
+                    obs = f"Could not find {entity}."
                 else:
-                    obs = await self.asearch("[" + entity + "]", is_retry=True)
+                    obs = await self.asearch(f"[{entity}]", is_retry=True)
             else:
                 self.page = ""
                 for p in page:
@@ -153,7 +151,7 @@ class ReActWikipedia(Docstore):
         Returns: a Document object or error message.
         """
         s = time.time()
-        entity = str(entity)
+        entity = entity
         entity_ = entity.replace(" ", "+")
         search_url = f"https://en.wikipedia.org/w/index.php?search={entity_}"
         response_text = requests.get(search_url).text
@@ -170,8 +168,8 @@ class ReActWikipedia(Docstore):
                 response_text, entity, skip_retry_when_postprocess=True
             )
 
-            if "Similar:" in result:
-                result = "Could not find " + entity + "."
+        if "Similar:" in result:
+            result = f"Could not find {entity}."
 
         if self.benchmark and not is_retry:
             # we only benchmark the outermost call
@@ -193,7 +191,7 @@ class ReActWikipedia(Docstore):
         Returns: a Document object or error message.
         """
         s = time.time()
-        entity = str(entity)
+        entity = entity
         entity_ = entity.replace(" ", "+")
         search_url = f"https://en.wikipedia.org/w/index.php?search={entity_}"
 
@@ -215,8 +213,8 @@ class ReActWikipedia(Docstore):
                 response_text, entity, skip_retry_when_postprocess=True
             )
 
-            if "Similar:" in result:
-                return "Could not find " + entity + "."
+        if "Similar:" in result:
+            return f"Could not find {entity}."
 
         if self.benchmark and not is_retry:
             # we only benchmark the outermost call
@@ -276,7 +274,7 @@ class DocstoreExplorer:
         else:
             self.lookup_index += 1
         lookups = [p for p in self._paragraphs if self.lookup_str in p.lower()]
-        if len(lookups) == 0:
+        if not lookups:
             return "No Results"
         elif self.lookup_index >= len(lookups):
             return "No More Results"
